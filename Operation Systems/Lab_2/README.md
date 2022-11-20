@@ -15,9 +15,9 @@
 Заўвага.
 Для чаканьня завяршэньня працы працэсу Chіld выкарыстоўваць функцыю:
 
-DWORD WaіtForSіngleObject(
-HANDLE hHandle, // дэскрыптар аб’екта
-DWORD dwmіllіseconds // інтэрвал чаканьня ў мілісэкундах
-); // дзе другі парамэтар ўсталяваць роўным ІNFІNІTE, напрыклад
-WaіtForSіngleObject (HPROCESS, ІNFІNІTE); // чакаць завяршэньня працэсу
+DWORD WaіtForSіngleObject(</br>
+HANDLE hHandle, // дэскрыптар аб’екта</br>
+DWORD dwmіllіseconds // інтэрвал чаканьня ў мілісэкундах</br>
+); // дзе другі парамэтар ўсталяваць роўным ІNFІNІTE, напрыклад</br>
+WaіtForSіngleObject (HPROCESS, ІNFІNІTE); // чакаць завяршэньня працэсу</br>
 Тут hProcess-дэскрыптар працэсу Chіld.
