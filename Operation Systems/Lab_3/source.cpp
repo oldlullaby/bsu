@@ -17,7 +17,7 @@ DWORD WINAPI work(LPVOID Arr) {
 
 	EnterCriticalSection(&cs);
 	auto massiv = (Array*)(Arr);
-	
+
 	int cs_r = 0;
 
 	for (int i = 0; i < massiv->n; ++i) {
@@ -28,26 +28,21 @@ DWORD WINAPI work(LPVOID Arr) {
 		}
 	}
 
-	SetEvent(Event_1);
-	
-	for (int i = 0; i < massiv->k; ++i) {
-		std::cout << massiv->arr[i] << " ";
-	}
-
 	LeaveCriticalSection(&cs);
+	SetEvent(Event_1);
 	return 0;
 }
 
 DWORD WINAPI countElement(LPVOID Arr) {
-	SetEvent(Event_1);
-	
+	WaitForSingleObject(Event_1, INFINITE);
+
 	auto massiv = (Array*)Arr;
 
 	massiv->result = 0;
 	for (int i = 0; i < massiv->k; ++i) {
 		if (massiv->arr[i] == (int)massiv->arr[i]) massiv->result++;
 	}
-	
+
 	SetEvent(Event_2);
 	return 0;
 }
@@ -81,29 +76,38 @@ int main() {
 	}
 
 	// -*****************************************************
-	
+
 	EnterCriticalSection(&cs);
 
-	std::cout << "\nEnter k: ";
-	std::cin >> massiv.k;
 
 	HANDLE Work = CreateThread(nullptr, NULL, work, &massiv, 0, &IDThread_1);
 	HANDLE CountElement = CreateThread(nullptr, NULL, countElement, &massiv, 0, &IDThread_2);
-
-	SetEvent(Event_1);
+	std::cout << "\nEnter k: ";
+	std::cin >> massiv.k;
 
 	LeaveCriticalSection(&cs);
+
+	WaitForSingleObject(Event_1, INFINITE);
+
+	for (int i = 0; i < massiv.k; ++i) {
+		std::cout << massiv.arr[i] << " ";
+	}
+
 	WaitForSingleObject(Event_2, INFINITE);
 
-	std::cout << "\nResult = " << massiv.result;
+	std::cout << "\nResult = " << massiv.result << std::endl;
+
+	for (int i = massiv.k; i < massiv.n; ++i) {
+		std::cout << massiv.arr[i] << " ";
+	}
 
 	CloseHandle(Work);
 	CloseHandle(CountElement);
 	CloseHandle(Event_1);
 	CloseHandle(Event_2);
-	
+
 	DeleteCriticalSection(&cs);
 
 	return 0;
-	
+
 }
