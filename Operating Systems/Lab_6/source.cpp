@@ -6,13 +6,14 @@
 #include <chrono>
 #include <condition_variable>
 
-std::mutex cs;
-std::mutex Event_1;
-std::mutex Event_2;
+std::mutex out, section;
+
+std::condition_variable Event_1, Event_2, Event_3;
 
 void Work(std::vector<double>& array, int n, int& k) {
 
-	std::unique_lock cs_locker(cs);
+	std::unique_lock lock_section(section);
+	Event_3.wait(lock_section);
 
 	int cs_r = 0;
 
@@ -24,18 +25,27 @@ void Work(std::vector<double>& array, int n, int& k) {
 		}
 	}
 
-	cs_locker.unlock();
-	std::unique_lock event_locker(Event_1);
+	lock_section.unlock();
+	// std::cout << k << std::endl;
+	Event_1.notify_all();
 }
 
-void countElement(std::vector<double>& array, int n, int& k, int &result) {
+void countElement(std::vector<double>& array, int n, int& k, int& result) {
+
+	std::unique_lock lock_out(section);
+	Event_1.wait(lock_out);
 
 	for (int i = 0; i < k; ++i) if (array[i] == (int)array[i]) result++;
-	std::unique_lock event_locker(Event_2);
+
+	lock_out.unlock();
+
+	Event_2.notify_one();
+
 }
 
 
 int main() {
+
 
 	std::cout << "Enter array size: ";
 	int n, k, result = 0; std::cin >> n;
@@ -48,26 +58,23 @@ int main() {
 	std::cout << "Array size: " << n << "\nArray: ";
 	for (int i = 0; i < n; ++i) std::cout << array[i] << " ";
 
+	std::thread work(Work, std::ref(array), n, std::ref(k));
+	std::thread CountElement(countElement, std::ref(array), n, std::ref(k), std::ref(result));
+
 	std::cout << "Enter k:" << std::endl; std::cin >> k;
 
-	// -*****************************************************
-
-	std::unique_lock cs_locker(cs);
-
-
-	std::jthread work(Work, std::ref(array), n, std::ref(k));
-	std::jthread CountElement(countElement, std::ref(array), std::ref(k), std::ref(result));
-
-
-	cs_locker.unlock();
+	std::unique_lock lock_section(section);
+	Event_3.notify_one();
+	
+	Event_1.wait(lock_section);
 
 	for (int i = 0; i < k; ++i) std::cout << array[i] << " ";
+	Event_2.wait(lock_section);
 
 	std::cout << "\nResult = " << result << std::endl;
-
 	for (int i = k; i < n; ++i) std::cout << array[i] << " ";
-	
 
+	lock_section.unlock(); work.detach(); CountElement.detach();
 	return 0;
 
 }
